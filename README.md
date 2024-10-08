@@ -2,6 +2,8 @@
 
 This is a playground for experimenting with [Temporal Nexus](https://temporal.io/nexus).
 
+See [handler/service.go](https://github.com/prasek/nexus-playground/blob/main/handler/service.go) for some sample Nexus Operations.
+
 ## Getting started
 
 ```
