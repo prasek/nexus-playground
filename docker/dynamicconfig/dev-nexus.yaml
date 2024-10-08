@@ -1,0 +1,16 @@
+limit.maxIDLength:
+  - value: 255
+    constraints: {}
+system.forceSearchAttributesCacheRefreshOnRead:
+  - value: true # Dev setup only. Please don't turn this on in production.
+    constraints: {}
+system.enableNexus:
+  - value: true
+component.nexusoperations.callback.endpoint.template:
+  - value: http://localhost:7243/namespaces/{{.NamespaceName}}/nexus/callback
+component.callbacks.allowedAddresses:
+  - value:
+      - Pattern: "*"
+        AllowInsecure: true
+component.nexusoperations.limit.scheduleToCloseTimeout:
+  - value: 60d
