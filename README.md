@@ -77,7 +77,7 @@ https://cloud.temporal.io/nexus
 
 Done.
 
-## Setup Temporal Local Dev Server Environment
+## Alternate: Local Dev Server Environment
 
 Alternatively, create a local environment with the instructions below.
 
