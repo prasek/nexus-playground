@@ -90,13 +90,10 @@ func BuildNexusService() *utils.ServiceBuilder {
 			if err != nil {
 				logServiceError(ctx, input, "ExecuteWorkflow", err)
 
-				//must do this check and return a non-retryable error or it will 500 infinite retry by default today
 				if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
 					return nil, nexus.HandlerErrorf(nexus.HandlerErrorTypeBadRequest, errorMessage(input, err))
 				}
 
-				//TODO: wrap other errors with an UnsuccessfulOperationError, otherwise it will 500 retry indefinitely?
-				// for example: serviceerrors.NotFound
 				return nil, err
 			}
 
