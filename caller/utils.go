@@ -12,7 +12,13 @@ func logWorkflowInfo(ctx workflow.Context, input CallerWorkflowInput, msg string
 
 func logWorkflowError(ctx workflow.Context, input CallerWorkflowInput, msg string, err error, keyvals ...interface{}) error {
 	logger := workflow.GetLogger(ctx)
-	logger.Error(utils.ErrorDump(input.Input, msg, err), keyvals...)
+	logger.Error(utils.ErrorDumpMessage(input.Input, msg, err), keyvals...)
+	return err
+}
+
+func logWorkflowErrorDump(ctx workflow.Context, msg string, err error) error {
+	logger := workflow.GetLogger(ctx)
+	logger.Error(utils.ErrorDump(msg, err))
 	return err
 }
 

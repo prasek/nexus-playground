@@ -1,7 +1,6 @@
 package caller
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -19,17 +18,21 @@ type CallerWorkflowInput struct {
 	Endpoint string
 	Service  string
 	service.Input
-	//	Operation  string
-	//	BusinessID string
-	//	Args       []string
-	Timeout     int64 //seconds
-	Concurrency int64 //num Nexus ops to create
-	BadInput    bool  //should client pass a bad input
+	//	operation  string
+	//	businessid string
+	//	args       []string
+	Timeout             int64 //seconds
+	Concurrency         int64 //num nexus ops to create
+	BadInput            bool  //should client pass a bad input
+	CallerCancelTimeout int64 //should caller cancel the Nexus op after N seconds
 
 }
 
 func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, error) {
-	logWorkflowInfo(ctx, input, "starting ...")
+
+	childCtx, cancelFunc := workflow.WithCancel(ctx)
+
+	logWorkflowInfo(childCtx, input, "starting ...")
 
 	c := workflow.NewNexusClient(input.Endpoint, input.Service)
 	if input.BadInput {
@@ -38,11 +41,11 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 
 	if input.Concurrency <= 1 {
 
-		logWorkflowInfo(ctx, input, "concurrency <= 1",
+		logWorkflowInfo(childCtx, input, "concurrency <= 1",
 			"Concurrency", input.Concurrency,
 			"BadInput", input.BadInput)
 
-		fut := c.ExecuteOperation(ctx,
+		fut := c.ExecuteOperation(childCtx,
 			input.Operation,
 			input.Input,
 			workflow.NexusOperationOptions{
@@ -52,43 +55,43 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 		// Optionally wait for the operation to be started. NexusOperationExecution will contain the operation ID in
 		// case this operation is asynchronous.
 		var exec workflow.NexusOperationExecution
-		if err := fut.GetNexusOperationExecution().Get(ctx, &exec); err != nil {
-			logWorkflowError(ctx, input, "GetNexusOperationExecution", err,
+		if err := fut.GetNexusOperationExecution().Get(childCtx, &exec); err != nil {
+
+			logWorkflowError(childCtx, input, "GetNexusOperationExecution", err,
 				"IsApplicationError", temporal.IsApplicationError(err),
 				"IsCancelled", temporal.IsCanceledError(err),
 				"IsTerminatedError", temporal.IsTerminatedError(err),
 				"IsTimeoutError", temporal.IsTimeoutError(err),
 			)
 
-			var nexusError *temporal.NexusOperationError
-			if errors.As(err, &nexusError) {
-				logWorkflowError(ctx, input, "NexusError", nexusError)
-				logWorkflowError(ctx, input, "NexusError.Cause", nexusError.Cause)
-			}
 			return "", err
 		}
 
-		logWorkflowInfo(ctx, input, "started",
+		logWorkflowInfo(childCtx, input, "started",
 			"OperationID", exec.OperationID)
 
+		if input.CallerCancelTimeout > 0 {
+			workflow.Sleep(childCtx, time.Duration(input.CallerCancelTimeout*int64(time.Second)))
+			logWorkflowInfo(childCtx, input, "requesting cancellation via workflow.WithCancel() handler ...")
+			cancelFunc() //from workflow.WithCancel()
+			logWorkflowInfo(childCtx, input, "cancelNexusOperation() returned")
+			return "Nexus operation workflow.WithCancel() handler returned, returning from caller workflow func.", nil
+		}
+
 		var res service.Output
-		if err := fut.Get(ctx, &res); err != nil {
-			logWorkflowError(ctx, input, "Get", err,
+		if err := fut.Get(childCtx, &res); err != nil {
+
+			logWorkflowError(childCtx, input, "Get", err,
 				"IsApplicationError", temporal.IsApplicationError(err),
 				"IsCancelled", temporal.IsCanceledError(err),
 				"IsTerminatedError", temporal.IsTerminatedError(err),
 				"IsTimeoutError", temporal.IsTimeoutError(err),
 			)
 
-			var nexusError *temporal.NexusOperationError
-			if errors.As(err, &nexusError) {
-				logWorkflowError(ctx, input, "NexusError", nexusError)
-				logWorkflowError(ctx, input, "NexusError.Cause", nexusError.Cause)
-			}
 			return "", err
 		}
 
-		logWorkflowInfo(ctx, input, "completed",
+		logWorkflowInfo(childCtx, input, "completed",
 			"OperationID", exec.OperationID)
 
 		return res.Message, nil
@@ -109,14 +112,14 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 
 	var results []workflow.NexusOperationFuture
 
-	logWorkflowInfo(ctx, input, "concurrency > 1",
+	logWorkflowInfo(childCtx, input, "concurrency > 1",
 		"Concurrency", input.Concurrency)
 
 	for i := 0; i < int(input.Concurrency); i++ {
-		logWorkflowInfo(ctx, input, "starting operation ...",
+		logWorkflowInfo(childCtx, input, "starting operation ...",
 			"OpCount", i)
 
-		fut := c.ExecuteOperation(ctx,
+		fut := c.ExecuteOperation(childCtx,
 			input.Operation,
 			input.Input,
 			workflow.NexusOperationOptions{
@@ -130,23 +133,18 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 	for _, fut := range results {
 
 		var res service.Output
-		if err := fut.Get(ctx, &res); err != nil {
-			logWorkflowError(ctx, input, "Get", err,
+		if err := fut.Get(childCtx, &res); err != nil {
+			logWorkflowError(childCtx, input, "Get", err,
 				"IsApplicationError", temporal.IsApplicationError(err),
 				"IsCancelled", temporal.IsCanceledError(err),
 				"IsTerminatedError", temporal.IsTerminatedError(err),
 				"IsTimeoutError", temporal.IsTimeoutError(err),
 			)
 
-			var nexusError *temporal.NexusOperationError
-			if errors.As(err, &nexusError) {
-				logWorkflowError(ctx, input, "NexusError", nexusError)
-				logWorkflowError(ctx, input, "NexusError.Cause", nexusError.Cause)
-			}
 			return "", err
 		}
 
-		logWorkflowInfo(ctx, input, "completed operation",
+		logWorkflowInfo(childCtx, input, "completed operation",
 			"Message", res.Message)
 
 	}

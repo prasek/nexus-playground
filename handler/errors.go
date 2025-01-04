@@ -23,15 +23,27 @@ and they'll automatically be available in the 3 operations above.
 
 type errorFunc func(service.Input) error
 
+func NewCustomAppError(err error) *CustomAppError {
+	return &CustomAppError{err}
+}
+
+type CustomAppError struct {
+	Err error
+}
+
+func (e *CustomAppError) Error() string {
+	return e.Err.Error()
+}
+
 var simulatedErrors = map[string]errorFunc{
 	"fmt.Errorf": func(input service.Input) error {
 		return fmt.Errorf(message(input, "unknown error"))
 	},
 	"ApplicationError": func(input service.Input) error {
-		return temporal.NewApplicationError(message(input, "temporal app error"), "my temporal app error type")
+		return temporal.NewApplicationError(message(input, "temporal app error"), "MyAppErrorType")
 	},
 	"ApplicationErrorNonRetryable": func(input service.Input) error {
-		return temporal.NewNonRetryableApplicationError(message(input, "temporal app error"), "my temporal app error type", errors.New("cause: unknown"))
+		return temporal.NewNonRetryableApplicationError(message(input, "temporal app error"), "MyAppErrorType", errors.New("cause: unknown"), "details1", "details2", "details3")
 	},
 	"HandlerErrorTypeInternal": func(input service.Input) error {
 		return nexus.HandlerErrorf(nexus.HandlerErrorTypeInternal, message(input, "nexus intenral error"))
@@ -48,9 +60,8 @@ var simulatedErrors = map[string]errorFunc{
 	"UnsuccessfulOperationError": func(input service.Input) error {
 		return &nexus.UnsuccessfulOperationError{
 			State: nexus.OperationStateFailed,
-			Failure: nexus.Failure{
-				Message: message(input, "unsuccessful nexus op error"),
-			}}
+			Cause: NewCustomAppError(fmt.Errorf(message(input, "user-defined unsuccessful nexus op error message"))),
+		}
 	},
 	"HandlerErrorTypeBadRequest": func(input service.Input) error {
 		return nexus.HandlerErrorf(nexus.HandlerErrorTypeBadRequest, message(input, "nexus bad request error"))
@@ -96,4 +107,3 @@ func getAvailableErrorTypes() string {
 	return s
 
 }
-

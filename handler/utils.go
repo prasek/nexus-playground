@@ -18,7 +18,13 @@ func logServiceInfo(ctx context.Context, input service.Input, msg string, keyval
 
 func logServiceError(ctx context.Context, input service.Input, msg string, err error, keyvals ...interface{}) error {
 	logger := temporalnexus.GetLogger(ctx)
-	logger.Error(errorDump(input, msg, err), keyvals...)
+	logger.Error(errorDumpMessage(input, msg, err), keyvals...)
+	return err
+}
+
+func logServiceErrorDump(ctx context.Context, msg string, err error) error {
+	logger := temporalnexus.GetLogger(ctx)
+	logger.Error(utils.ErrorDump(msg, err))
 	return err
 }
 
@@ -29,7 +35,13 @@ func logWorkflowInfo(ctx workflow.Context, input service.Input, msg string, keyv
 
 func logWorkflowError(ctx workflow.Context, input service.Input, msg string, err error, keyvals ...interface{}) error {
 	logger := workflow.GetLogger(ctx)
-	logger.Error(errorDump(input, msg, err), keyvals...)
+	logger.Error(errorDumpMessage(input, msg, err), keyvals...)
+	return err
+}
+
+func logWorkflowErrorDump(ctx workflow.Context, msg string, err error) error {
+	logger := workflow.GetLogger(ctx)
+	logger.Error(utils.ErrorDump(msg, err))
 	return err
 }
 
@@ -37,8 +49,8 @@ func message(input service.Input, msg string) string {
 	return utils.Message(input, msg)
 }
 
-func errorDump(input service.Input, msg string, err error) string {
-	return utils.ErrorDump(input, msg, err)
+func errorDumpMessage(input service.Input, msg string, err error) string {
+	return utils.ErrorDumpMessage(input, msg, err)
 }
 
 func errorMessage(input service.Input, err error) string {
