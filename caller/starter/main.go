@@ -14,6 +14,7 @@ import (
 	"github.com/temporalio/nexus-playground/caller"
 	"github.com/temporalio/nexus-playground/options"
 	"github.com/temporalio/nexus-playground/service"
+	"github.com/temporalio/nexus-playground/utils"
 )
 
 func main() {
@@ -73,27 +74,29 @@ func main() {
 		Endpoint: *args.Endpoint,
 		Service:  service.MyServiceName,
 		Input: service.Input{
-			Operation:  nexusOpName,
-			BusinessID: businessID, // should use a real biz id, but for testing let's use this
-			Args:       otherArgs,
+			Operation:           nexusOpName,
+			BusinessID:          businessID, // should use a real biz id, but for testing let's use this
+			WaitForCancellation: args.HandlerWaitForCancellation,
+			Args:                otherArgs,
 		},
-		Timeout:     args.Timeout, //seconds
-		Concurrency: args.Concurrency,
-		BadInput:    args.BadInput,
+		Timeout:             args.Timeout, //seconds
+		Concurrency:         args.Concurrency,
+		BadInput:            args.BadInput,
+		CallerCancelTimeout: args.CallerCancelTimeout, //seconds
 	}
 
 	//fmt.Printf("\nOp name:\n- %s\nother args:\n- %s\n\n", nexusOpName, strings.Join(otherArgs, ","))
 
 	wr, err := c.ExecuteWorkflow(ctx, workflowOptions, caller.CallerWorkflow, input)
 	if err != nil {
-		log.Fatalln("Caller execute error:", err)
+		log.Fatalln(utils.ErrorDump("ERROR", err))
 	}
 	log.Println("Caller workflow started", "WorkflowID", wr.GetID(), "RunID", wr.GetRunID())
 
 	var result string
 	err = wr.Get(context.Background(), &result)
 	if err != nil {
-		log.Fatalln("Caller workflow error:", err)
+		log.Fatalln(utils.ErrorDump("ERROR", err))
 	}
 	log.Println("Caller workflow result:", result)
 }

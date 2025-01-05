@@ -159,7 +159,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 				return nil, nexus.HandlerErrorf(nexus.HandlerErrorTypeBadRequest, getAvailableErrorTypes())
 			}
 
-			return nil, logServiceError(ctx, input, "Result", newErrorFromType(input, errorType))
+			return nil, logServiceErrorDump(ctx, "Result", newErrorFromType(input, errorType))
 
 		})
 
@@ -177,7 +177,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 				return nil, nexus.HandlerErrorf(nexus.HandlerErrorTypeBadRequest, getAvailableErrorTypes())
 			}
 
-			return nil, logServiceError(ctx, input, "Result", newErrorFromType(input, errorType))
+			return nil, logServiceErrorDump(ctx, "Result", newErrorFromType(input, errorType))
 		}})
 
 	utils.NewWorkflowRunOperation(s,
