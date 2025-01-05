@@ -73,27 +73,8 @@ Prints available commands
 ### async-op-workflow-wait-for-cancel command
 - complete by requesting cancelation in the UI (caller workflow or handler workflow):
 
-A cancellation request on the caller workflow from UI will block until the Nexus Operation cancelled (or completed).
-By default the handler workflow will not `WaitForCancellation` for Activity execution, so the cancellation will happen quickly.
 ```
-./cloud-run.sh starter async-op-workflow-wait-for-cancel
-```
-
-Using the `-handler-wait-for-cancellation` flag will set `WaitForCancellation: true` in the handler workflow.
-This demonstrates how the caller workflow blocks until the operation is cancelled (or completed).
-```
-./cloud-run.sh starter -handler-wait-for-cancellation async-op-workflow-wait-for-cancel
-```
-
-The caller workflow may cancel with a workflow.WithCancel() handler.
-Use `-caller-cancel <N seconds>` for the caller to cancel the Nexus Operation.
-```
- ./cloud-run.sh starter -caller-cancel 2 async-op-workflow-wait-for-cancel
-```
-
-Both `-caller-cancel` and `-handler-wait-for-cancellation` may be used in combination
-```
- ./cloud-run.sh starter -caller-cancel 2 -handler-wait-for-cancellation async-op-workflow-wait-for-cancel
+./local-run.sh starter async-op-workflow-wait-for-cancel
 ```
 
 ## Signal commands

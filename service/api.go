@@ -6,10 +6,10 @@ const (
 )
 
 type Input struct {
-	Operation           string
-	BusinessID          string
-	WaitForCancellation bool
-	Args                []string
+	Operation                  string
+	BusinessID                 string
+	HandlerWaitForCancellation bool
+	Args                       []string
 }
 
 type Output struct {

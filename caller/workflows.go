@@ -21,10 +21,11 @@ type CallerWorkflowInput struct {
 	//	operation  string
 	//	businessid string
 	//	args       []string
-	Timeout             int64 //seconds
-	Concurrency         int64 //num nexus ops to create
-	BadInput            bool  //should client pass a bad input
-	CallerCancelTimeout int64 //should caller cancel the Nexus op after N seconds
+	Timeout                   int64 //seconds
+	Concurrency               int64 //num nexus ops to create
+	BadInput                  bool  //should client pass a bad input
+	CallerCancelTimeout       int64 //should caller cancel the Nexus op after N seconds
+	CallerWaitForCancellation bool  //should caller wait for cancellation via fut.Get()
 
 }
 
@@ -74,8 +75,12 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 			workflow.Sleep(childCtx, time.Duration(input.CallerCancelTimeout*int64(time.Second)))
 			logWorkflowInfo(childCtx, input, "requesting cancellation via workflow.WithCancel() handler ...")
 			cancelFunc() //from workflow.WithCancel()
-			logWorkflowInfo(childCtx, input, "cancelNexusOperation() returned")
-			return "Nexus operation workflow.WithCancel() handler returned, returning from caller workflow func.", nil
+			logWorkflowInfo(childCtx, input, "cancelFunc() invoked")
+
+			if !input.CallerWaitForCancellation {
+				logWorkflowInfo(childCtx, input, "CallerWaitForCancellation: false, returning immediately.")
+				return "Nexus operation workflow.WithCancel() func invoked, returned immemediately from caller workflow func.", nil
+			}
 		}
 
 		var res service.Output
