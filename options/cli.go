@@ -21,6 +21,7 @@ type ParsedArgs struct {
 	BadInput                   bool
 	HandlerWaitForCancellation bool
 	CallerCancelTimeout        int64 //caller cancels operation after N seconds
+	CallerWaitForCancellation  bool  //caller waits for cancel to complete via fut.Get()
 }
 
 // ParseClientOptionFlags parses the given arguments into client options. In
@@ -39,6 +40,7 @@ func ParseClientOptionFlags(args []string) (ParsedArgs, error) {
 	badInput := set.Bool("bad-input", false, "client sends a bad input type if true")
 	handlerWaitForCancellation := set.Bool("handler-wait-for-cancellation", false, "handler workflow activity option WaitForCancellation")
 	callerCancelTimout := set.Int64("caller-cancel", 0, "Caller workflow cancels Nexus Operation after N seconds. No cancellation if 0.")
+	callerWaitForCancellation := set.Bool("caller-wait-for-cancellation", false, "caller workflow waits for Nexus op cancelation result via fut.Get()")
 	serverRootCACert := set.String("server-root-ca-cert", "", "Optional path to root server CA cert")
 	clientCert := set.String("client-cert", "", "Optional path to client cert")
 	clientKey := set.String("client-key", "", "Optional path to client key")
@@ -99,5 +101,6 @@ func ParseClientOptionFlags(args []string) (ParsedArgs, error) {
 		BadInput:                   *badInput,
 		HandlerWaitForCancellation: *handlerWaitForCancellation,
 		CallerCancelTimeout:        *callerCancelTimout,
+		CallerWaitForCancellation:  *callerWaitForCancellation,
 	}, nil
 }

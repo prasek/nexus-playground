@@ -71,11 +71,72 @@ Prints available commands
 ```
 
 ### async-op-workflow-wait-for-cancel command
-- complete by requesting cancelation in the UI (caller workflow or handler workflow):
 
+caller workflow -> nexus op -> handler workflow -> long running activity (with heartbeats waiting for cancellation)
+
+#### Cancel caller workflow from UI - handler workflow doesn't `WaitForCancellation`
+
+Run the command below and then request cancelation of the **caller workflow** in the UI
 ```
-./local-run.sh starter async-op-workflow-wait-for-cancel
+./cloud-run.sh starter async-op-workflow-wait-for-cancel
 ```
+- caller workflow will `RequestCancelNexusOperation`
+- caller workflow waits for nexus op cancellation to be completed, which waits for the underlying handler workflow
+- by default the underlying handler workflow will not `WaitForCancellation` for Activity execution, so cancellation will happen quickly as it won't wait for the activity cancellation.
+- handler workflow will recieve and return a `(*internal.CanceledError)` from `activityFut.Get()`, so the handler workflow will be marked `Canceled`.
+- caller workflow will recieve and return a `(*internal.CanceledError)` from `nexusFut.Get()`, so the caller workflow will be marked `Canceled`.
+
+#### Cancel handler workflow from UI - handler workflow doesn't `WaitForCancellation`
+
+Run the command below and then request cancelation of the **handler workflow** in the UI
+```
+./cloud-run.sh starter async-op-workflow-wait-for-cancel
+```
+- by default the underlying handler workflow will not `WaitForCancellation` for Activity execution, so cancellation will happen quickly as it won't wait for the activity cancellation.
+- handler workflow will recieve and return a `(*internal.CanceledError)` from `activityFut.Get()`, so the handler workflow will be marked `Canceled`.
+- caller workflow will recieve and return a `(*internal.CanceledError)` from `nexusFut.Get()`, so the caller workflow will be marked `Canceled`.
+- this demonstrates handler -> caller canceled error propagation.
+
+#### Handler workflow using `WaitForCancellation` for a long running activity
+
+Using the `-handler-wait-for-cancellation` flag will set `WaitForCancellation: true` in the handler workflow activity options.
+```
+./cloud-run.sh starter -handler-wait-for-cancellation async-op-workflow-wait-for-cancel
+```
+- complete by requesting cancelation in the UI (caller workflow or handler workflow)
+- caller workflow will wait for cancellation to be processed in the underlying handler activity, which returns success/completed.
+- caller workflow and handler workflow will show `Completed`, not cancelled, with a result of "canceled by Done"
+
+#### Cancel a Nexus Operation in a caller workflow using `workflow.WithCancel()`
+
+The caller workflow may cancel with `workflow.WithCancel()`.
+- Use `-caller-cancel <N seconds>` for the caller to cancel the Nexus Operation using, which by default it a try/cancel with an immediate exit.
+- Use `-caller-wait-for-cancellation` to do a subsequent `fut.Get()` to wait for the operation to become `Canceled` or `Completed`.
+```
+./cloud-run.sh starter -caller-cancel 2 -caller-wait-for-cancellation async-op-workflow-wait-for-cancel
+```
+- handler workflow will recieve and return a `(*internal.CanceledError)` from `activityFut.Get()`, so the handler workflow will be marked `Canceled`.
+- caller workflow will recieve and return a `(*internal.CanceledError)` from `nexusFut.Get()`, so the caller workflow will be marked `Canceled`.
+- note: since the handler workflow is not using `WaitForCancellation: true` for it's long running activity, the activity will keep running until it detects "Error workflow execution already completed".
+
+#### Try/Cancel a Nexus Operation in a caller workflow using `workflow.WithCancel()`
+
+This is not recommended as cancelation isn't guaranteed if the parent exists before delivery is done.
+For example, run the following command and see the handler workflow keeps running:
+```
+./cloud-run.sh starter -caller-cancel 2 async-op-workflow-wait-for-cancel
+```
+- caller workflow uses the `workflow.WithCancel()` func, which adds a `NexusOperationCancelRequested` event to the caller's workflow history and then returns immediately
+- the nexus op cancellation request may be processed in a delayed fashion (or not at all) in some cases the underlying activity may take 10 minutes or longer to get a "canceled by Done" in the heartbeat.
+- the handler workflow callback will also be unable to be delivered with a "request failed with: 404 Not Found" since the caller workflow has already completed.
+
+#### Cancel Nexus Operation in a caller workflow with `workflow.WithCancel()` and both caller and handler `WaitForCancellation: true`
+
+Waiting for cancellation for the entire chain is demonstrated with:
+```
+./cloud-run.sh starter -caller-cancel 2 -caller-wait-for-cancellation -handler-wait-for-cancellation async-op-workflow-wait-for-cancel
+```
+- caller workflow and handler workflow will show `Completed`, not cancelled, with a result of "canceled by Done" from underlying handler activity
 
 ## Signal commands
 

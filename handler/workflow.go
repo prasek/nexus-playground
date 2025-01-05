@@ -21,7 +21,7 @@ func (w *Workflow) WaitForCancel(ctx workflow.Context, input service.Input) (*se
 	ctx = workflow.WithActivityOptions(ctx,
 		workflow.ActivityOptions{
 			StartToCloseTimeout: 30 * time.Hour,
-			WaitForCancellation: input.WaitForCancellation,
+			WaitForCancellation: input.HandlerWaitForCancellation,
 		},
 	)
 
@@ -32,6 +32,7 @@ func (w *Workflow) WaitForCancel(ctx workflow.Context, input service.Input) (*se
 	).Get(ctx, &result)
 
 	if err != nil {
+		logWorkflowError(ctx, input, "ExecuteActivity.Get()", err)
 		return nil, err
 	}
 

@@ -74,15 +74,16 @@ func main() {
 		Endpoint: *args.Endpoint,
 		Service:  service.MyServiceName,
 		Input: service.Input{
-			Operation:           nexusOpName,
-			BusinessID:          businessID, // should use a real biz id, but for testing let's use this
-			WaitForCancellation: args.HandlerWaitForCancellation,
-			Args:                otherArgs,
+			Operation:                  nexusOpName,
+			BusinessID:                 businessID, // should use a real biz id, but for testing let's use this
+			HandlerWaitForCancellation: args.HandlerWaitForCancellation,
+			Args:                       otherArgs,
 		},
-		Timeout:             args.Timeout, //seconds
-		Concurrency:         args.Concurrency,
-		BadInput:            args.BadInput,
-		CallerCancelTimeout: args.CallerCancelTimeout, //seconds
+		Timeout:                   args.Timeout, //seconds
+		Concurrency:               args.Concurrency,
+		BadInput:                  args.BadInput,
+		CallerCancelTimeout:       args.CallerCancelTimeout,       //seconds
+		CallerWaitForCancellation: args.CallerWaitForCancellation, //seconds
 	}
 
 	//fmt.Printf("\nOp name:\n- %s\nother args:\n- %s\n\n", nexusOpName, strings.Join(otherArgs, ","))
