@@ -78,7 +78,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 
 			wfOpts := client.StartWorkflowOptions{
 				ID:                                       workflowIDWaitForSignal(input.BusinessID),
-				WorkflowIDConflictPolicy:                 enums.WORKFLOW_ID_CONFLICT_POLICY_FAIL,
+				WorkflowIDConflictPolicy:                 enums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: true,
 			}

@@ -9,6 +9,7 @@ type Input struct {
 	Operation                  string
 	BusinessID                 string
 	HandlerWaitForCancellation bool
+	HandlerContinueAsNew       bool
 	Args                       []string
 }
 
