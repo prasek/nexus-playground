@@ -40,6 +40,11 @@ func (w *Workflow) WaitForCancel(ctx workflow.Context, input service.Input) (*se
 }
 
 func (w *Workflow) WaitForSignal(ctx workflow.Context, input service.Input) (*service.Output, error) {
+	if input.HandlerContinueAsNew {
+		workflow.Sleep(ctx, 5*time.Second)
+		input.HandlerContinueAsNew = false
+		return nil, workflow.NewContinueAsNewError(ctx, w.WaitForSignal, input)
+	}
 	var signal DoneSignal
 	signalChan := workflow.GetSignalChannel(ctx, "done")
 	signalChan.Receive(ctx, &signal)

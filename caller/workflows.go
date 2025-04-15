@@ -26,7 +26,6 @@ type CallerWorkflowInput struct {
 	BadInput                  bool  //should client pass a bad input
 	CallerCancelTimeout       int64 //should caller cancel the Nexus op after N seconds
 	CallerWaitForCancellation bool  //should caller wait for cancellation via fut.Get()
-
 }
 
 func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, error) {
