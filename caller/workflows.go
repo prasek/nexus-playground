@@ -68,7 +68,7 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 		}
 
 		logWorkflowInfo(childCtx, input, "started",
-			"OperationID", exec.OperationID)
+			"OperationToken", exec.OperationToken)
 
 		if input.CallerCancelTimeout > 0 {
 			workflow.Sleep(childCtx, time.Duration(input.CallerCancelTimeout*int64(time.Second)))
@@ -96,7 +96,7 @@ func CallerWorkflow(ctx workflow.Context, input CallerWorkflowInput) (string, er
 		}
 
 		logWorkflowInfo(childCtx, input, "completed",
-			"OperationID", exec.OperationID)
+			"OperationToken", exec.OperationToken)
 
 		return res.Message, nil
 	}

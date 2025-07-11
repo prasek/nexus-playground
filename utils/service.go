@@ -67,9 +67,9 @@ func (sb *ServiceBuilder) GetNexusService() (*nexus.Service, error) {
 func NewSyncOperation[I any, O any](
 	sb *ServiceBuilder,
 	name string,
-	handler func(context.Context, client.Client, I, nexus.StartOperationOptions) (O, error),
+	handler func(context.Context, I, nexus.StartOperationOptions) (O, error),
 ) {
-	op := temporalnexus.NewSyncOperation(name, handler)
+	op := nexus.NewSyncOperation(name, handler)
 	sb.registerOperation(op)
 }
 

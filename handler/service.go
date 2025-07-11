@@ -41,14 +41,14 @@ func BuildNexusService() *utils.ServiceBuilder {
 
 	utils.NewSyncOperation(s,
 		"help",
-		func(ctx context.Context, c client.Client, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
+		func(ctx context.Context, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
 			logServiceInfo(ctx, input, "starting ...")
 			return newOutput(input, topLevelHelpUsage), nil
 		})
 
 	utils.NewSyncOperation(s,
 		"sync-op-ok",
-		func(ctx context.Context, c client.Client, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
+		func(ctx context.Context, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
 			logServiceInfo(ctx, input, "starting ...")
 			return newOutput(input, "OK"), nil
 		})
@@ -105,7 +105,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 	// uses arg1:txID from async-op-workflow-wait-for-signal
 	utils.NewSyncOperation(s,
 		"sync-op-signal",
-		func(ctx context.Context, c client.Client, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
+		func(ctx context.Context, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
 			logServiceInfo(ctx, input, "starting ...")
 			err := validateSignalCommandInput(input)
 			if err != nil {
@@ -113,6 +113,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 				return nil, nexus.HandlerErrorf(nexus.HandlerErrorTypeBadRequest, errorMessage(input, err))
 			}
 
+			c := temporalnexus.GetClient(ctx)
 			err = c.SignalWorkflow(ctx, workflowIDWaitForSignal(input.BusinessID), "", "done", DoneSignal{Done: true})
 			if err != nil {
 				logServiceError(ctx, input, "SignalWorkflow", err)
@@ -125,7 +126,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 	//can be used in conjunction with caller `ScheduleToClose` timeout to simluate a timeout
 	utils.NewSyncOperation(s,
 		"sync-op-wait-for-hour",
-		func(ctx context.Context, c client.Client, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
+		func(ctx context.Context, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
 			logServiceInfo(ctx, input, "starting ...")
 			time.Sleep(1 * time.Hour)
 			return newOutput(input, "OK"), nil
@@ -147,7 +148,7 @@ func BuildNexusService() *utils.ServiceBuilder {
 
 	utils.NewSyncOperation(s,
 		"sync-op-error",
-		func(ctx context.Context, c client.Client, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
+		func(ctx context.Context, input service.Input, options nexus.StartOperationOptions) (*service.Output, error) {
 			logServiceInfo(ctx, input, "starting ...")
 			errorType, err := getFirstArg(input, "error type not found; usage: starter sync-op-error <error type>")
 			if err != nil {
